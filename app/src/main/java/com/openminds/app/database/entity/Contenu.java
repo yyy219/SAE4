@@ -3,15 +3,22 @@ package com.openminds.app.database.entity;
 
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 @Entity(
         tableName = "contenu",
-        foreignKeys = @ForeignKey(entity = Formation.class,
+        indices = {
+                @Index("formationId")
+        },
+        foreignKeys = @ForeignKey(
+                entity = Formation.class,
                 parentColumns = "id",
                 childColumns = "formationId",
-                onDelete = ForeignKey.CASCADE)
+                onDelete = ForeignKey.CASCADE
+        )
 )
+
 public class Contenu {
 
     @PrimaryKey(autoGenerate = true)

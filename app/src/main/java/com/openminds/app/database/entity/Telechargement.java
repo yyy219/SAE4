@@ -3,10 +3,15 @@ package com.openminds.app.database.entity;
 
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 @Entity(
         tableName = "telechargement",
+        indices = {
+                @Index("utilisateurId"),
+                @Index("formationId")
+        },
         foreignKeys = {
                 @ForeignKey(entity = Utilisateur.class,
                         parentColumns = "id",

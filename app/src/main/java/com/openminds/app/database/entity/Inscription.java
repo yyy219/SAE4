@@ -8,6 +8,11 @@ import androidx.room.PrimaryKey;
 
 @Entity(
         tableName = "inscription",
+        indices = {
+                @Index("utilisateurId"),
+                @Index("sessionId"),
+                @Index(value = {"utilisateurId", "sessionId"}, unique = true)
+        },
         foreignKeys = {
                 @ForeignKey(entity = Utilisateur.class,
                         parentColumns = "id",
@@ -17,9 +22,8 @@ import androidx.room.PrimaryKey;
                         parentColumns = "id",
                         childColumns = "sessionId",
                         onDelete = ForeignKey.CASCADE)
-        },indices = {@Index(value = {"utilisateurId", "sessionId"}, unique = true)}
+        }
 )
-
 public class Inscription {
 
     @PrimaryKey(autoGenerate = true)
