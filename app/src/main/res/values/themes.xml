@@ -6,4 +6,32 @@
     </style>
 
     <style name="Theme.OpenMinds" parent="Base.Theme.OpenMinds" />
+
+
+
+    <style name="Titre_carte">
+        <item name="android:textSize">@dimen/text_card_title</item>
+        <item name="android:textColor">@color/text_secondaire</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+
+    <style name="Label_champ">
+        <item name="android:textSize">@dimen/text_label</item>
+        <item name="android:textColor">@color/text_secondaire</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:layout_marginBottom">6dp</item>
+    </style>
+
+
+    <style name="Button">
+        <item name="android:textSize">@dimen/text_button</item>
+        <item name="android:textColor">@color/blanc</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:background">@drawable/background_bouton_vert</item>
+        <item name="android:layout_height">@dimen/button_height</item>
+    </style>
+
 </resources>
