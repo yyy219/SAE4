@@ -3,6 +3,7 @@ package com.example.sae.fragment;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,11 @@ import androidx.fragment.app.Fragment;
 import com.example.sae.Formation;
 import com.example.sae.FormationAdapter;
 import com.example.sae.R;
+import com.example.sae.database.FormationRepository;
+
+// 1. Importer AppDatabase et les entités (Ajuste les noms de packages selon ceux de ton ami)
+// import com.example.sae.database.AppDatabase;
+// import com.example.sae.database.FormationRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,8 +27,8 @@ import java.util.List;
 public class FormationFragment extends Fragment {
 
     private FormationAdapter adapter;
-    private List<Formation> formationList;      // Liste affichée à l'écran
-    private List<Formation> formationListFull;  // Sauvegarde de la liste complète pour la recherche
+    private List<Formation> formationList;
+    private List<Formation> formationListFull;
 
     public FormationFragment() { }
 
@@ -38,16 +44,16 @@ public class FormationFragment extends Fragment {
         adapter = new FormationAdapter(getActivity(), R.layout.item_formation, formationList);
         lvFormations.setAdapter(adapter);
 
-        chargerFormationsLocales();
+        // NOUVEAU : On appelle la base de données au lieu des données en dur
+        chargerFormationsDepuisBDD();
 
-        // ======= LA MAGIE DE LA RECHERCHE =======
         etRecherche.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filtrerFormations(s.toString()); // On filtre à chaque lettre tapée
+                filtrerFormations(s.toString());
             }
 
             @Override
@@ -62,38 +68,55 @@ public class FormationFragment extends Fragment {
         return rootView;
     }
 
-    // Méthode pour filtrer la liste
     private void filtrerFormations(String texteRecherche) {
         List<Formation> listeFiltree = new ArrayList<>();
-
         for (Formation f : formationListFull) {
-            // On cherche dans le titre OU dans la thématique (sans se soucier des majuscules)
             if (f.getTitre().toLowerCase().contains(texteRecherche.toLowerCase()) ||
                     f.getThematique().toLowerCase().contains(texteRecherche.toLowerCase())) {
                 listeFiltree.add(f);
             }
         }
-
-        // On met à jour l'affichage
         formationList.clear();
         formationList.addAll(listeFiltree);
         adapter.notifyDataSetChanged();
     }
 
-    private void chargerFormationsLocales() {
-        formationListFull.clear(); // On remplit la liste de sauvegarde
+    // ==========================================
+    // INTEGRATION DE LA BASE DE DONNEES
+    // ==========================================
+    private void chargerFormationsDepuisBDD() {
+        // Règle d'or : On fait tout le travail de base de données en arrière-plan
+        new Thread(() -> {
+            try {
+                // 1. On se connecte directement à la base
+                com.example.sae.database.AppDatabase db = com.example.sae.database.AppDatabase.getInstance(requireActivity().getApplicationContext());
+                com.example.sae.database.FormationDao dao = db.formationDao();
 
-        formationListFull.add(new Formation(1, "Bases de l'Écologie Associative", "Environnement", "Apprenez les gestes de tri, le recyclage et la réduction des déchets lors de nos événements locaux."));
-        formationListFull.add(new Formation(2, "Organiser un événement Zéro Déchet", "Environnement", "Les étapes clés pour planifier une manifestation publique en minimisant l'impact carbone."));
-        formationListFull.add(new Formation(3, "Accueil Inclusif et Bienveillant", "Inclusion", "Formation sur l'accueil des publics fragiles ou en situation de handicap (moteur et cognitif)."));
-        formationListFull.add(new Formation(4, "Lutter contre les discriminations", "Tolérance", "Identifier et réagir face aux comportements discriminatoires (sexisme, racisme, etc.) sur le terrain."));
-        formationListFull.add(new Formation(5, "Droits et Devoirs du Bénévole", "Citoyenneté", "Comprendre vos responsabilités légales et éthiques en tant que représentant de l'association."));
-        formationListFull.add(new Formation(6, "Laïcité et Neutralité", "Citoyenneté", "Comment appliquer le principe de laïcité dans nos actions quotidiennes auprès du public."));
-        formationListFull.add(new Formation(7, "Promouvoir l'Égalité Homme-Femme", "Égalité", "Outils et postures pour garantir une parité réelle dans les instances dirigeantes et sur le terrain."));
+                // 2. On vérifie s'il y a des données. Si c'est vide (0), on les crée !
+                if (dao.countAll() == 0) {
+                    dao.insertFormation(new Formation(0, "Bases de l'Écologie Associative", "Environnement", "Apprenez les gestes de tri, le recyclage et la réduction des déchets."));
+                    dao.insertFormation(new Formation(0, "Accueil Inclusif et Bienveillant", "Inclusion", "Formation sur l'accueil des publics fragiles ou en situation de handicap."));
+                    dao.insertFormation(new Formation(0, "Droits et Devoirs du Bénévole", "Citoyenneté", "Comprendre vos responsabilités légales et éthiques en association."));
+                }
 
-        // On copie tout dans la liste affichée
-        formationList.clear();
-        formationList.addAll(formationListFull);
-        adapter.notifyDataSetChanged();
+                // 3. Maintenant on est ABSOLUMENT SÛR que les données sont sauvegardées
+                // On les récupère toutes
+                List<Formation> formationsBDD = dao.getAllFormations();
+
+                // 4. On renvoie les données vers l'écran (Interface Graphique)
+                requireActivity().runOnUiThread(() -> {
+                    formationListFull.clear();
+                    formationListFull.addAll(formationsBDD); // On stocke la sauvegarde
+
+                    formationList.clear();
+                    formationList.addAll(formationListFull); // On met dans la liste affichée
+
+                    adapter.notifyDataSetChanged(); // On dit à l'écran de se rafraîchir
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 }
